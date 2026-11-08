@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}About | {{ site_name }}{% endblock %}
+{% block content %}
+<article class="static"><h1>About {{ site_name }}</h1>
+<p>{{ site_name }} is an independent publication covering international relations, geopolitics, defence, the global economy, diplomacy and technology.</p>
+<h2>How we label content</h2>
+<ul>
+<li><strong>Reported news</strong> is written or edited by our staff and cites its sources.</li>
+<li><strong>Analysis</strong> interprets events and represents the author's assessment. It is not presented as verified fact.</li>
+<li><strong>Opinion</strong> reflects the views of the named author.</li>
+<li><strong>Aggregated headlines</strong> are collected from external news organisations, reviewed by an editor and always link to the original reporting. We show only the headline, a short summary supplied by the publisher and a link.</li>
+</ul>
+<h2>Corrections</h2>
+<p>If you believe we have made an error, please <a href="{{ url_for('public.static_page', name='contact') }}">contact the editors</a>. Updated articles display an updated date.</p>
+</article>
+{% endblock %}

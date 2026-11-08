@@ -1,0 +1,88 @@
+{% macro stamp(a) -%}
+<time datetime="{{ a.published_at|iso }}">{{ a.published_at|dt('%d %b %Y, %H:%M') }} UTC</time>
+{%- endmacro %}
+
+{% macro labels(a) -%}
+<span class="kicker">{% if a.category %}<a href="{{ url_for('public.category', slug=a.category.slug) }}">{{ a.category.name }}</a>{% endif %}</span>
+{%- if a.kind != 'news' %} <span class="badge badge-{{ a.kind }}">{{ a.kind_label }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro thumb(a, cls='thumb', size='small', sizes='(min-width: 900px) 25vw, 90vw') -%}
+{% if a.featured_image %}
+<a class="{{ cls }}" href="{{ url_for('public.article', slug=a.slug) }}" tabindex="-1" aria-hidden="true">
+  <img src="{{ a.featured_image|img('small') }}" srcset="{{ a.featured_image|img('small') }} 800w, {{ a.featured_image|img }} 1600w" sizes="{{ sizes }}" alt="{{ a.image_alt or '' }}" loading="lazy" decoding="async">
+</a>
+{% endif %}
+{%- endmacro %}
+
+{% macro lead_story(a) %}
+<article class="lead {{ 'has-image' if a.featured_image else 'no-image' }}">
+  {% if a.featured_image %}
+  <a class="lead-img" href="{{ url_for('public.article', slug=a.slug) }}">
+    <img src="{{ a.featured_image|img }}" srcset="{{ a.featured_image|img('small') }} 800w, {{ a.featured_image|img }} 1600w" sizes="(min-width: 1100px) 700px, 100vw" alt="{{ a.image_alt or '' }}" fetchpriority="high" decoding="async">
+  </a>
+  {% endif %}
+  <div class="lead-text">
+    <p class="meta">{{ labels(a) }}</p>
+    <h1 class="lead-title"><a href="{{ url_for('public.article', slug=a.slug) }}">{{ a.title }}</a></h1>
+    {% if a.summary %}<p class="lead-summary">{{ a.summary }}</p>{% endif %}
+    <p class="byline">
+      {% if a.author %}By <a href="{{ url_for('public.author', slug=a.author.slug) }}">{{ a.author.name }}</a> &middot; {% elif a.source_name %}Via {{ a.source_name }} &middot; {% endif %}{{ stamp(a) }}
+    </p>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro card(a) %}
+<article class="card">
+  {{ thumb(a) }}
+  <p class="meta">{{ labels(a) }}</p>
+  <h3 class="card-title"><a href="{{ url_for('public.article', slug=a.slug) }}">{{ a.title }}</a></h3>
+  {% if a.summary %}<p class="card-summary">{{ a.summary|truncate(140) }}</p>{% endif %}
+  <p class="byline">{{ stamp(a) }}</p>
+</article>
+{% endmacro %}
+
+{% macro row(a) %}
+<article class="row">
+  <div class="row-text">
+    <p class="meta">{{ labels(a) }} <span class="dot">&middot;</span> {{ stamp(a) }}</p>
+    <h3 class="row-title"><a href="{{ url_for('public.article', slug=a.slug) }}">{{ a.title }}</a></h3>
+    {% if a.summary %}<p class="row-summary">{{ a.summary|truncate(200) }}</p>{% endif %}
+    {% if a.is_collected and a.source_name %}<p class="byline">Source: {{ a.source_name }}</p>{% endif %}
+  </div>
+  {{ thumb(a, 'thumb row-thumb', 'small', '200px') }}
+</article>
+{% endmacro %}
+
+{% macro ranked(items) %}
+<ol class="ranked">
+  {% for a in items %}<li><a href="{{ url_for('public.article', slug=a.slug) }}">{{ a.title }}</a></li>{% endfor %}
+</ol>
+{% endmacro %}
+
+{% macro pager(pg) %}
+{% if pg.pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if pg.has_prev %}<a rel="prev" href="{{ page_url(pg.prev_num) }}">&larr; Newer</a>{% else %}<span></span>{% endif %}
+  <span class="pager-count">Page {{ pg.page }} of {{ pg.pages }}</span>
+  {% if pg.has_next %}<a rel="next" href="{{ page_url(pg.next_num) }}">Older &rarr;</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{% macro newsletter(next_url='/') %}
+<section class="newsletter" id="newsletter" aria-labelledby="nl-title">
+  <h2 id="nl-title">The Global Review Briefing</h2>
+  <p>A concise digest of the week's most important international developments and analysis.</p>
+  <form method="post" action="{{ url_for('public.subscribe') }}" class="nl-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <label for="nl-email" class="sr-only">Email address</label>
+    <input id="nl-email" type="email" name="email" placeholder="Your email address" required maxlength="254" autocomplete="email">
+    <button type="submit" class="btn">Subscribe</button>
+  </form>
+  <p class="fine">We use your email only to send the newsletter. Unsubscribe on request. See our <a href="{{ url_for('public.static_page', name='privacy') }}">privacy policy</a>.</p>
+</section>
+{% endmacro %}

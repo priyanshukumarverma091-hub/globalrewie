@@ -1,0 +1,24 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf %}
+{% block content %}
+<h1>Authors</h1>
+<div class="item-list">
+  {% for au in items %}
+  <form method="post" class="item-form">{{ csrf() }}<input type="hidden" name="id" value="{{ au.id }}">
+    <label>Name<input name="name" value="{{ au.name }}" required maxlength="120"></label>
+    <label>Title<input name="title" value="{{ au.title }}" maxlength="150"></label>
+    <label class="grow">Bio<textarea name="bio" rows="2" maxlength="2000">{{ au.bio }}</textarea></label>
+    <span class="count">{{ au.articles.count() }} articles</span>
+    <span class="row-actions"><button class="btn-link" type="submit">Save</button>
+      <button class="btn-link danger" type="submit" formaction="{{ url_for('admin.delete_author', author_id=au.id) }}" data-confirm-btn="Delete this author?">Delete</button></span>
+  </form>
+  {% endfor %}
+</div>
+<h2>Add author</h2>
+<form method="post" class="item-form">{{ csrf() }}
+  <label>Name<input name="name" required maxlength="120"></label>
+  <label>Title<input name="title" maxlength="150" placeholder="e.g. Diplomatic Editor"></label>
+  <label class="grow">Bio<textarea name="bio" rows="2" maxlength="2000"></textarea></label>
+  <button class="btn btn-small" type="submit">Add</button>
+</form>
+{% endblock %}

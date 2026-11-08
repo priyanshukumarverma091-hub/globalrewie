@@ -1,0 +1,24 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf %}
+{% block content %}
+<h1>Breaking news ticker</h1>
+<p class="muted">Active items scroll across the top of the public site (newest 10 shown). Link to an article path such as <code>/article/your-slug</code> or a full URL.</p>
+<form method="post" class="item-form">{{ csrf() }}
+  <label class="grow">Headline<input name="text" required maxlength="250"></label>
+  <label class="grow">Link (optional)<input name="url" maxlength="500" placeholder="/article/..."></label>
+  <button class="btn btn-small" type="submit">Add to ticker</button>
+</form>
+<table class="table">
+  <thead><tr><th>Headline</th><th>Link</th><th>Status</th><th>Added (UTC)</th><th></th></tr></thead>
+  <tbody>
+  {% for t in items %}
+  <tr><td>{{ t.text }}</td><td>{{ t.url or '-' }}</td><td><span class="pill pill-{{ 'published' if t.is_active else 'draft' }}">{{ 'live' if t.is_active else 'hidden' }}</span></td>
+    <td>{{ t.created_at|dt('%d %b %H:%M') }}</td>
+    <td class="row-actions">
+      <form method="post" action="{{ url_for('admin.ticker_action', item_id=t.id, action='toggle') }}">{{ csrf() }}<button class="btn-link" type="submit">{{ 'Hide' if t.is_active else 'Show' }}</button></form>
+      <form method="post" action="{{ url_for('admin.ticker_action', item_id=t.id, action='delete') }}" data-confirm="Remove this ticker item?">{{ csrf() }}<button class="btn-link danger" type="submit">Delete</button></form>
+    </td></tr>
+  {% else %}<tr><td colspan="5" class="muted">No ticker items. The ticker is hidden until one is added.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

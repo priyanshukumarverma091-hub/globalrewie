@@ -1,0 +1,58 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf, status_pill, pager %}
+{% block content %}
+<h1>Collected news</h1>
+<p class="muted">Headlines gathered from RSS feeds and news APIs. Nothing appears on the site until you approve it. Only the headline, a short publisher summary and a link to the original are stored.</p>
+
+<section class="panel">
+  <h2>Sources</h2>
+  <table class="table">
+    <thead><tr><th>Source</th><th>Type</th><th>Last fetch (UTC)</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for s in sources %}
+    <tr>
+      <td>{{ s.name }}</td><td>{{ s.kind|upper }}</td>
+      <td>{{ s.last_fetched_at|dt('%d %b %H:%M') if s.last_fetched_at else 'never' }}</td>
+      <td class="{{ 'danger' if s.last_status.startswith('Error') }}">{{ s.last_status or '-' }}{% if s.kind == 'newsapi' and not newsapi_ready %} (set NEWSAPI_KEY){% endif %}</td>
+      <td class="row-actions">
+        <form method="post" action="{{ url_for('admin.collected_fetch') }}">{{ csrf() }}<input type="hidden" name="source_id" value="{{ s.id }}"><button class="btn-link" type="submit">Fetch now</button></form>
+        {% if current_user.is_admin %}<form method="post" action="{{ url_for('admin.toggle_source', source_id=s.id) }}">{{ csrf() }}<button class="btn-link" type="submit">{{ 'Disable' if s.is_active else 'Enable' }}</button></form>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" action="{{ url_for('admin.collected_fetch') }}">{{ csrf() }}<button class="btn" type="submit">Fetch from all active sources</button></form>
+  {% if current_user.is_admin %}
+  <form method="post" action="{{ url_for('admin.add_source') }}" class="inline-form">{{ csrf() }}
+    <input type="text" name="name" placeholder="Feed name" required maxlength="150">
+    <input type="url" name="feed_url" placeholder="https://example.com/rss.xml" required>
+    <button class="btn btn-ghost btn-small" type="submit">Add RSS feed</button>
+  </form>{% endif %}
+</section>
+
+<nav class="tabs" aria-label="Status">
+  {% for s in ('pending','published','rejected') %}<a href="{{ url_for('admin.collected', status=s) }}" {{ 'aria-current=page' if status == s }}>{{ s|capitalize }}</a>{% endfor %}
+</nav>
+<form method="post" action="{{ url_for('admin.collected_bulk') }}">
+  {{ csrf() }}<input type="hidden" name="status" value="{{ status }}">
+  <table class="table">
+    <thead><tr><th><input type="checkbox" id="select-all" aria-label="Select all"></th><th>Headline</th><th>Source</th><th>Category</th><th>Published (UTC)</th><th></th></tr></thead>
+    <tbody>
+    {% for a in pg.items %}
+    <tr>
+      <td><input type="checkbox" name="ids" value="{{ a.id }}" aria-label="Select"></td>
+      <td><a href="{{ url_for('admin.edit_article', article_id=a.id) }}">{{ a.title }}</a>{% if a.summary %}<br><small class="muted">{{ a.summary|truncate(160) }}</small>{% endif %}</td>
+      <td><a href="{{ a.source_url }}" target="_blank" rel="noopener noreferrer nofollow">{{ a.source_name }}</a></td>
+      <td>{{ a.category.name if a.category else '-' }}</td>
+      <td>{{ a.published_at|dt('%d %b %H:%M') }}</td>
+      <td>{{ status_pill(a.status) }}</td>
+    </tr>
+    {% else %}<tr><td colspan="6" class="muted">Nothing here. Use "Fetch" to collect headlines.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <p class="actions"><button class="btn" name="action" value="approve" type="submit">Approve &amp; publish selected</button>
+    <button class="btn btn-ghost" name="action" value="reject" type="submit">Reject selected</button></p>
+</form>
+{{ pager(pg) }}
+{% endblock %}

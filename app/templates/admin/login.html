@@ -1,0 +1,14 @@
+{% extends 'admin/base.html' %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<section class="login-card">
+  <h1>{{ site_name }}</h1>
+  <p class="muted">Editorial dashboard sign-in</p>
+  <form method="post" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Email<input type="email" name="email" required autofocus autocomplete="username" maxlength="254"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</section>
+{% endblock %}

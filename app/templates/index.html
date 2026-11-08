@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import lead_story, card, row, ranked, newsletter %}
+{% block content %}
+{% if lead %}
+<section class="front" aria-label="Top stories">
+  <div class="front-main">{{ lead_story(lead) }}</div>
+  <aside class="front-side" aria-label="More top stories">
+    {% for a in secondary[:3] %}{{ card(a) }}{% endfor %}
+  </aside>
+</section>
+{% if secondary|length > 3 %}
+<section class="strip">{% for a in secondary[3:] %}{{ card(a) }}{% endfor %}</section>
+{% endif %}
+{% else %}
+<section class="empty">
+  <h1>No stories published yet</h1>
+  <p>Sign in to the <a href="{{ url_for('admin.login') }}">editorial dashboard</a> to write the first article or review headlines collected from international news sources.</p>
+</section>
+{% endif %}
+
+<div class="two-col">
+  <section class="latest" aria-labelledby="latest-h">
+    <h2 class="section-title" id="latest-h">Latest News</h2>
+    {% for a in latest %}{{ row(a) }}{% else %}<p class="muted">Nothing here yet.</p>{% endfor %}
+    <p class="more"><a href="{{ url_for('public.search') }}">Browse the full archive &rarr;</a></p>
+  </section>
+  <aside class="rail">
+    {% if most_read %}<section><h2 class="section-title small">Most Read</h2>{{ ranked(most_read) }}</section>{% endif %}
+    {% if picks %}<section><h2 class="section-title small">Editor's Picks</h2>{{ ranked(picks) }}</section>{% endif %}
+    {% if trending %}<section><h2 class="section-title small">Trending Stories</h2>{{ ranked(trending) }}</section>{% endif %}
+    {% if analysis %}<section><h2 class="section-title small">Analysis</h2>{{ ranked(analysis) }}<p class="more"><a href="{{ url_for('public.analysis') }}">All analysis &rarr;</a></p></section>{% endif %}
+  </aside>
+</div>
+
+{% for s in sections %}
+<section class="special" aria-labelledby="sec-{{ s.slug }}">
+  <h2 class="section-title" id="sec-{{ s.slug }}"><a href="{{ url_for('public.category', slug=s.slug) }}">{{ s.heading }}</a></h2>
+  <div class="grid-4">{% for a in s['items'] %}{{ card(a) }}{% endfor %}</div>
+</section>
+{% endfor %}
+
+{{ newsletter(url_for('public.index')) }}
+{% endblock %}

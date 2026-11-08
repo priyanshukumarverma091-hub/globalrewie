@@ -1,0 +1,16 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf, pager %}
+{% block content %}
+<div class="head-row"><h1>Newsletter subscribers</h1><a class="btn btn-ghost" href="{{ url_for('admin.export_subscribers') }}">Export CSV</a></div>
+<form class="filter-bar" method="get"><input type="search" name="q" value="{{ term }}" placeholder="Search email" aria-label="Search email"><button class="btn btn-small" type="submit">Search</button></form>
+<table class="table">
+  <thead><tr><th>Email</th><th>Subscribed (UTC)</th><th></th></tr></thead>
+  <tbody>
+  {% for s in pg.items %}
+  <tr><td>{{ s.email }}</td><td>{{ s.created_at|dt('%d %b %Y %H:%M') }}</td>
+    <td class="row-actions"><form method="post" action="{{ url_for('admin.delete_subscriber', sub_id=s.id) }}" data-confirm="Remove this subscriber?">{{ csrf() }}<button class="btn-link danger" type="submit">Remove</button></form></td></tr>
+  {% else %}<tr><td colspan="3" class="muted">No subscribers yet.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{{ pager(pg) }}
+{% endblock %}

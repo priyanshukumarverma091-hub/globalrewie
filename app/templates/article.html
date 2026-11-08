@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import card, newsletter %}
+{% block title %}{{ a.title }} | {{ site_name }}{% endblock %}
+{% block description %}{{ a.meta_description or a.summary or a.subtitle or a.title }}{% endblock %}
+{% block canonical %}{{ abs_url(url_for('public.article', slug=a.slug)) }}{% endblock %}
+{% block robots %}{% if a.is_collected or preview %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if a.featured_image %}<meta property="og:image" content="{{ abs_url(a.featured_image|img) }}">{% endif %}
+<meta property="article:published_time" content="{{ a.published_at|iso }}">{% endblock %}
+{% block head %}
+{% if not a.is_collected and not preview %}
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org", "@type": "NewsArticle" if a.kind == "news" else "Article",
+  "headline": a.title[:110], "description": a.summary or a.subtitle,
+  "datePublished": a.published_at|iso, "dateModified": (a.updated_at or a.published_at)|iso,
+  "mainEntityOfPage": abs_url(url_for('public.article', slug=a.slug)),
+  "author": {"@type": "Person", "name": a.author.name} if a.author else {"@type": "Organization", "name": site_name},
+  "publisher": {"@type": "Organization", "name": site_name},
+  "image": [abs_url(a.featured_image|img)] if a.featured_image else [],
+  "articleSection": a.category.name if a.category else ""
+}|tojson }}</script>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if preview %}<p class="flash flash-success">Preview &middot; status: <strong>{{ a.status }}</strong>. This page is not public and is hidden from search engines.</p>{% endif %}
+<article class="story" itemscope>
+  <header class="story-head">
+    <p class="meta">
+      {% if a.category %}<a class="kicker" href="{{ url_for('public.category', slug=a.category.slug) }}">{{ a.category.name }}</a>{% endif %}
+      {% if a.kind != 'news' %}<span class="badge badge-{{ a.kind }}">{{ a.kind_label }}</span>{% endif %}
+      {% if a.country %}<span class="badge badge-plain">{{ a.country }}</span>{% endif %}
+      {% if a.analysis_type %}<span class="badge badge-plain">{{ a.ANALYSIS_TYPES.get(a.analysis_type, '') }}</span>{% endif %}
+    </p>
+    <h1 class="story-title">{{ a.title }}</h1>
+    {% if a.subtitle %}<p class="story-sub">{{ a.subtitle }}</p>{% endif %}
+    <div class="story-byline">
+      {% if a.author %}<p class="author-line">By <a href="{{ url_for('public.author', slug=a.author.slug) }}"><strong>{{ a.author.name }}</strong></a>{% if a.author.title %}, <span class="muted">{{ a.author.title }}</span>{% endif %}</p>
+      {% elif a.source_name %}<p class="author-line">Reported by <strong>{{ a.source_name }}</strong></p>{% endif %}
+      <p class="dates">
+        {% if a.published_at %}Published <time datetime="{{ a.published_at|iso }}">{{ a.published_at|dt('%d %B %Y, %H:%M') }} UTC</time>{% endif %}
+        {% if a.was_updated %}&middot; Updated <time datetime="{{ a.updated_at|iso }}">{{ a.updated_at|dt('%d %B %Y, %H:%M') }} UTC</time>{% endif %}
+        {% if not a.is_collected %}&middot; {{ a.reading_time }} min read{% endif %}
+      </p>
+    </div>
+  </header>
+
+  {% if a.featured_image %}
+  <figure class="story-figure">
+    <img src="{{ a.featured_image|img }}" srcset="{{ a.featured_image|img('small') }} 800w, {{ a.featured_image|img }} 1600w" sizes="(min-width: 1000px) 900px, 100vw" alt="{{ a.image_alt or '' }}" fetchpriority="high" decoding="async">
+    {% if a.image_credit or a.image_alt %}<figcaption>{{ a.image_alt }}{% if a.image_credit %} <span class="credit">{{ a.image_credit }}</span>{% endif %}</figcaption>{% endif %}
+  </figure>
+  {% endif %}
+
+  <div class="story-layout">
+    <div class="story-body">
+      {% if a.kind == 'opinion' %}<p class="notice">This is an opinion piece. The views expressed are the author's own.</p>
+      {% elif a.kind == 'analysis' %}<p class="notice">This is analysis. It interprets reported events and represents the author's assessment, not a statement of verified fact.</p>{% endif %}
+
+      {% if a.is_collected %}
+        <p class="notice">This is an aggregated headline from an external news organisation. {{ site_name }} did not write or verify this report.</p>
+        {% if a.summary %}<p class="collected-summary">{{ a.summary }}</p>{% endif %}
+        <p><a class="btn" href="{{ a.source_url }}" rel="noopener noreferrer nofollow" target="_blank">Read the original report at {{ a.source_name or 'the source' }} &rarr;</a></p>
+      {% else %}
+        {% if a.summary %}<p class="standfirst">{{ a.summary }}</p>{% endif %}
+        <div class="prose">{{ a.body|safe }}</div>
+
+        {% if a.timeline_items %}
+        <section class="timeline" aria-labelledby="tl-h"><h2 id="tl-h">Timeline</h2>
+          <ol>{% for t in a.timeline_items %}<li><span class="tl-when">{{ t.when }}</span><span class="tl-what">{{ t.what }}</span></li>{% endfor %}</ol>
+        </section>
+        {% endif %}
+
+        {% if a.commentary_items %}
+        <section class="commentary" aria-labelledby="cm-h"><h2 id="cm-h">Expert commentary</h2>
+          {% for c in a.commentary_items %}<blockquote><p>{{ c.quote }}</p><footer>{{ c.name }}{% if c.role %}, {{ c.role }}{% endif %}</footer></blockquote>{% endfor %}
+        </section>
+        {% endif %}
+      {% endif %}
+
+      {% if a.references_list %}
+      <section class="references" aria-labelledby="ref-h"><h2 id="ref-h">Sources &amp; references</h2>
+        <ol>{% for r in a.references_list %}<li>{% if r.url %}<a href="{{ r.url }}" rel="noopener noreferrer nofollow" target="_blank">{{ r.label }}</a>{% else %}{{ r.label }}{% endif %}</li>{% endfor %}</ol>
+      </section>
+      {% endif %}
+
+      {% if a.tag_list %}
+      <p class="tags"><span class="sr-only">Tags:</span>{% for t in a.tag_list %}<a href="{{ url_for('public.search', q=t) }}">{{ t }}</a>{% endfor %}</p>
+      {% endif %}
+
+      {% set share_url = abs_url(url_for('public.article', slug=a.slug)) %}
+      <div class="share" aria-label="Share this article">
+        <span>Share</span>
+        <a href="https://twitter.com/intent/tweet?url={{ share_url|urlencode }}&amp;text={{ a.title|urlencode }}" rel="noopener noreferrer" target="_blank">X</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" rel="noopener noreferrer" target="_blank">Facebook</a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url|urlencode }}" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+        <a href="https://wa.me/?text={{ (a.title ~ ' ' ~ share_url)|urlencode }}" rel="noopener noreferrer" target="_blank">WhatsApp</a>
+        <a href="mailto:?subject={{ a.title|urlencode }}&amp;body={{ share_url|urlencode }}">Email</a>
+        <button type="button" class="linkbtn" data-copy="{{ share_url }}">Copy link</button>
+      </div>
+
+      {% if a.author and a.author.bio %}
+      <aside class="author-box"><h2>About the author</h2><p><strong>{{ a.author.name }}</strong>{% if a.author.title %} &middot; {{ a.author.title }}{% endif %}</p><p>{{ a.author.bio }}</p></aside>
+      {% endif %}
+    </div>
+  </div>
+</article>
+
+{% if related %}
+<section class="special"><h2 class="section-title">Related coverage</h2><div class="grid-4">{% for r in related %}{{ card(r) }}{% endfor %}</div></section>
+{% endif %}
+{{ newsletter(url_for('public.article', slug=a.slug)) }}
+{% endblock %}

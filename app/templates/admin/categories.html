@@ -1,0 +1,24 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf %}
+{% block content %}
+<h1>Categories</h1>
+<div class="item-list">
+  {% for c in items %}
+  <form method="post" class="item-form">{{ csrf() }}<input type="hidden" name="id" value="{{ c.id }}">
+    <label>Name<input name="name" value="{{ c.name }}" required maxlength="80"></label>
+    <label class="grow">Description<input name="description" value="{{ c.description }}" maxlength="300"></label>
+    <label>Order<input name="sort_order" type="number" value="{{ c.sort_order }}" class="narrow"></label>
+    <span class="count">{{ c.articles.count() }} articles</span>
+    <span class="row-actions"><button class="btn-link" type="submit">Save</button>
+      <button class="btn-link danger" type="submit" formaction="{{ url_for('admin.delete_category', cat_id=c.id) }}" data-confirm-btn="Delete this category?">Delete</button></span>
+  </form>
+  {% endfor %}
+</div>
+<h2>Add category</h2>
+<form method="post" class="item-form">{{ csrf() }}
+  <label>Name<input name="name" required maxlength="80"></label>
+  <label class="grow">Description<input name="description" maxlength="300"></label>
+  <label>Order<input name="sort_order" type="number" value="0" class="narrow"></label>
+  <button class="btn btn-small" type="submit">Add</button>
+</form>
+{% endblock %}

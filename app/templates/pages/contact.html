@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Contact | {{ site_name }}{% endblock %}
+{% block content %}
+<article class="static"><h1>Contact</h1>
+<p>For editorial enquiries, corrections or feedback, write to <a href="mailto:{{ config.CONTACT_EMAIL }}">{{ config.CONTACT_EMAIL }}</a>.</p>
+<p>To receive our weekly briefing, use the <a href="{{ url_for('public.index') }}#newsletter">newsletter sign-up</a> on the homepage.</p>
+</article>
+{% endblock %}

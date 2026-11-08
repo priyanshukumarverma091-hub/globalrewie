@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: the-global-review
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Idempotent: creates tables if missing, seeds categories/feeds, creates the first admin if ADMIN_* are set.
+    startCommand: flask --app wsgi init-db && flask --app wsgi create-admin --from-env && gunicorn wsgi:app --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL        # paste your Neon connection string in the Render dashboard
+        sync: false
+      - key: SITE_URL            # e.g. https://the-global-review.onrender.com
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_NAME
+        value: Chief Editor
+      - key: ADMIN_PASSWORD      # remove after the first successful login
+        sync: false
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: CRON_TOKEN
+        generateValue: true

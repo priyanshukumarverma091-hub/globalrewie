@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy | {{ site_name }}{% endblock %}
+{% block content %}
+<article class="static"><h1>Privacy Policy</h1>
+<p><em>Template text. Have it reviewed against the laws that apply to you before launch.</em></p>
+<h2>What we collect</h2>
+<p>If you subscribe to the newsletter we store your email address. We do not use advertising trackers. Our servers keep standard technical logs (such as IP address and pages requested) for security and operations.</p>
+<h2>Cookies</h2>
+<p>We do not use advertising or analytics cookies. A strictly necessary session cookie is used to show confirmation messages after you submit a form and to keep editorial staff signed in to the dashboard.</p>
+<h2>Your choices</h2>
+<p>To be removed from the newsletter or to request deletion of your data, email <a href="mailto:{{ config.CONTACT_EMAIL }}">{{ config.CONTACT_EMAIL }}</a>.</p>
+</article>
+{% endblock %}

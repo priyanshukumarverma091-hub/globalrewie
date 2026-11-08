@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import row, pager %}
+{% block title %}{% if term %}Search: {{ term }}{% else %}Search{% endif %} | {{ site_name }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex,follow">{% endblock %}
+{% block content %}
+<header class="page-head"><h1>Search</h1></header>
+<form class="search-form" method="get" action="{{ url_for('public.search') }}">
+  <div class="search-main">
+    <label for="q" class="sr-only">Keywords</label>
+    <input id="q" type="search" name="q" value="{{ term }}" placeholder="Headline or keywords" maxlength="100">
+    <button class="btn" type="submit">Search</button>
+  </div>
+  <div class="search-filters">
+    <label>Category
+      <select name="category"><option value="">All</option>
+      {% for c in categories %}<option value="{{ c.slug }}" {{ 'selected' if c.slug == cat_slug }}>{{ c.name }}</option>{% endfor %}</select></label>
+    <label>Type
+      <select name="kind"><option value="">All</option>
+      <option value="news" {{ 'selected' if kind == 'news' }}>Reported news</option>
+      <option value="analysis" {{ 'selected' if kind == 'analysis' }}>Analysis</option>
+      <option value="opinion" {{ 'selected' if kind == 'opinion' }}>Opinion</option>
+      <option value="collected" {{ 'selected' if kind == 'collected' }}>Aggregated headlines</option></select></label>
+    <label>From <input type="date" name="from" value="{{ d_from }}"></label>
+    <label>To <input type="date" name="to" value="{{ d_to }}"></label>
+    <label>Sort
+      <select name="sort"><option value="newest" {{ 'selected' if sort != 'oldest' }}>Newest first</option><option value="oldest" {{ 'selected' if sort == 'oldest' }}>Oldest first</option></select></label>
+  </div>
+</form>
+<p class="result-count" aria-live="polite">{{ pg.total }} result{{ '' if pg.total == 1 else 's' }}{% if term %} for &ldquo;{{ term }}&rdquo;{% endif %}</p>
+<section class="list-wrap">
+  {% for a in pg.items %}{{ row(a) }}{% else %}<p class="muted">No stories match your search. Try different keywords or remove a filter.</p>{% endfor %}
+</section>
+{{ pager(pg) }}
+{% endblock %}

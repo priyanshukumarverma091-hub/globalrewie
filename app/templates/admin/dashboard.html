@@ -1,0 +1,30 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import status_pill %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stats">
+  <a class="stat" href="{{ url_for('admin.articles') }}"><b>{{ stats.total }}</b><span>Total articles</span></a>
+  <a class="stat" href="{{ url_for('admin.articles', status='published') }}"><b>{{ stats.published }}</b><span>Published</span></a>
+  <a class="stat" href="{{ url_for('admin.articles', status='draft') }}"><b>{{ stats.draft }}</b><span>Drafts</span></a>
+  <a class="stat" href="{{ url_for('admin.collected') }}"><b>{{ stats.pending }}</b><span>Collected, awaiting review</span></a>
+  {% if current_user.is_admin %}<a class="stat" href="{{ url_for('admin.subscribers') }}"><b>{{ stats.subscribers }}</b><span>Subscribers</span></a>{% endif %}
+  <div class="stat"><b>{{ stats.views }}</b><span>Total views</span></div>
+</div>
+<p class="actions"><a class="btn" href="{{ url_for('admin.new_article') }}">Write an article</a>
+  <a class="btn btn-ghost" href="{{ url_for('admin.collected') }}">Review collected news</a></p>
+<h2>Recently updated</h2>
+<table class="table">
+  <thead><tr><th>Headline</th><th>Type</th><th>Status</th><th>Updated (UTC)</th></tr></thead>
+  <tbody>
+  {% for a in recent %}
+  <tr><td><a href="{{ url_for('admin.edit_article', article_id=a.id) }}">{{ a.title }}</a></td><td>{{ a.kind_label }}</td><td>{{ status_pill(a.status) }}</td><td>{{ a.updated_at|dt('%d %b %Y %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">No articles yet.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% if logs %}
+<h2>Recent activity</h2>
+<table class="table"><tbody>
+  {% for l in logs %}<tr><td>{{ l.created_at|dt('%d %b %H:%M') }}</td><td>{{ l.user.name if l.user else '-' }}</td><td>{{ l.action }}</td><td>{{ l.target }}</td></tr>{% endfor %}
+</tbody></table>
+{% endif %}
+{% endblock %}

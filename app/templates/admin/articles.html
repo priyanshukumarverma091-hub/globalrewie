@@ -1,0 +1,33 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf, status_pill, pager %}
+{% block content %}
+<div class="head-row"><h1>Articles</h1><a class="btn" href="{{ url_for('admin.new_article') }}">New article</a></div>
+<form class="filter-bar" method="get">
+  <input type="search" name="q" value="{{ term }}" placeholder="Search headlines" aria-label="Search headlines">
+  <select name="status" aria-label="Status"><option value="">All statuses</option>
+    {% for s in ('draft','published','pending','rejected') %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}</select>
+  <select name="kind" aria-label="Type"><option value="">All types</option>
+    {% for k in ('news','analysis','opinion') %}<option value="{{ k }}" {{ 'selected' if kind == k }}>{{ k|capitalize }}</option>{% endfor %}</select>
+  <select name="category" aria-label="Category"><option value="">All categories</option>
+    {% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if cat == c.id }}>{{ c.name }}</option>{% endfor %}</select>
+  <button class="btn btn-small" type="submit">Filter</button>
+</form>
+<table class="table">
+  <thead><tr><th>Headline</th><th>Category</th><th>Type</th><th>Status</th><th>Updated (UTC)</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for a in pg.items %}
+  <tr>
+    <td><a href="{{ url_for('admin.edit_article', article_id=a.id) }}">{{ a.title }}</a></td>
+    <td>{{ a.category.name if a.category else '-' }}</td><td>{{ a.kind_label }}</td><td>{{ status_pill(a.status) }}</td>
+    <td>{{ a.updated_at|dt('%d %b %Y %H:%M') }}</td>
+    <td class="row-actions">
+      <a href="{{ url_for('admin.preview_article', article_id=a.id) }}" target="_blank" rel="noopener">Preview</a>
+      <form method="post" action="{{ url_for('admin.toggle_article', article_id=a.id) }}">{{ csrf() }}<button class="btn-link" type="submit">{{ 'Unpublish' if a.status == 'published' else 'Publish' }}</button></form>
+      {% if current_user.is_admin %}<form method="post" action="{{ url_for('admin.delete_article', article_id=a.id) }}" data-confirm="Delete this article permanently?">{{ csrf() }}<button class="btn-link danger" type="submit">Delete</button></form>{% endif %}
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="muted">No articles match these filters.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{{ pager(pg) }}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro status_pill(s) %}<span class="pill pill-{{ s }}">{{ s }}</span>{% endmacro %}
+{% macro pager(pg) %}
+{% if pg.pages > 1 %}<nav class="pager" aria-label="Pagination">
+  {% if pg.has_prev %}<a href="{{ page_url(pg.prev_num) }}">&larr; Previous</a>{% endif %}
+  <span>Page {{ pg.page }} of {{ pg.pages }} ({{ pg.total }} total)</span>
+  {% if pg.has_next %}<a href="{{ page_url(pg.next_num) }}">Next &rarr;</a>{% endif %}
+</nav>{% endif %}
+{% endmacro %}

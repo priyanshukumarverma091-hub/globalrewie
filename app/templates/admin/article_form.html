@@ -1,0 +1,97 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_admin_macros.html' import csrf, status_pill %}
+{% block content %}
+{% set collected = (not new) and a.kind == 'collected' %}
+<div class="head-row"><h1>{{ 'New article' if new else 'Edit article' }}</h1>
+  {% if not new %}<div>{{ status_pill(a.status) }} <a class="btn btn-ghost btn-small" href="{{ url_for('admin.preview_article', article_id=a.id) }}" target="_blank" rel="noopener">Preview</a></div>{% endif %}</div>
+{% if errors %}<div class="flash flash-error" role="alert"><strong>Please fix the following:</strong><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="editor-form" id="article-form">
+  {{ csrf() }}
+  <div class="form-main">
+    <label>Headline<input type="text" name="title" value="{{ v.title }}" maxlength="300" required></label>
+    <label>Subtitle<input type="text" name="subtitle" value="{{ v.subtitle }}" maxlength="400"></label>
+    <label>Summary / standfirst <small>(shown on cards and under the headline)</small>
+      <textarea name="summary" rows="3" maxlength="1000">{{ v.summary }}</textarea></label>
+
+    {% if collected %}
+      <div class="notice">Aggregated headline from <strong>{{ v.source_name }}</strong>. The original link is always shown. Only the headline and short summary are published.
+        <br><a href="{{ v.source_url }}" target="_blank" rel="noopener noreferrer">Open original report</a></div>
+    {% else %}
+      <div class="field"><span class="label">Body</span>
+        <div class="rte-toolbar" role="toolbar" aria-label="Formatting" id="rte-toolbar">
+          <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+          <button type="button" data-cmd="formatBlock" data-val="h2">H2</button>
+          <button type="button" data-cmd="formatBlock" data-val="h3">H3</button>
+          <button type="button" data-cmd="formatBlock" data-val="p">Paragraph</button>
+          <button type="button" data-cmd="formatBlock" data-val="blockquote">Quote</button>
+          <button type="button" data-cmd="insertUnorderedList">&bull; List</button>
+          <button type="button" data-cmd="insertOrderedList">1. List</button>
+          <button type="button" data-cmd="createLink">Link</button>
+          <button type="button" data-cmd="unlink">Unlink</button>
+          <button type="button" data-cmd="removeFormat">Clear</button>
+        </div>
+        <div id="rte" class="rte prose" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Article body">{{ v.body|safe }}</div>
+        <textarea name="body" id="body-field" hidden>{{ v.body }}</textarea>
+        <noscript><p class="muted">JavaScript is required for the rich-text editor.</p></noscript>
+      </div>
+
+      <details class="panel" {% if v.timeline or v.commentary or v.analysis_type or v.country %}open{% endif %}>
+        <summary>Analysis extras: country, timeline, expert commentary</summary>
+        <label>Analysis format
+          <select name="analysis_type">{% for k, label in a.ANALYSIS_TYPES.items() %}<option value="{{ k }}" {{ 'selected' if v.analysis_type == k }}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Country / region <input type="text" name="country" value="{{ v.country }}" maxlength="80"></label>
+        <label>Timeline <small>(one per line: <code>date | event</code>)</small><textarea name="timeline" rows="5">{{ v.timeline }}</textarea></label>
+        <label>Expert commentary <small>(one per line: <code>Name | Role | Quote</code>)</small><textarea name="commentary" rows="4">{{ v.commentary }}</textarea></label>
+      </details>
+    {% endif %}
+
+    <label>Sources &amp; references <small>(one per line: <code>Title | https://url</code>)</small>
+      <textarea name="references" rows="4">{{ v.references }}</textarea></label>
+    <label>Tags <small>(comma separated)</small><input type="text" name="tags" value="{{ v.tags }}"></label>
+    <label>SEO meta description <small>(max 300)</small><textarea name="meta_description" rows="2" maxlength="300">{{ v.meta_description }}</textarea></label>
+    <label>URL slug <small>(auto-generated from the headline if empty)</small><input type="text" name="slug" value="{{ v.slug }}" maxlength="120"></label>
+  </div>
+
+  <aside class="form-side">
+    <div class="panel">
+      <h2>Publish</h2>
+      <label>Publication date &amp; time <small>(UTC)</small><input type="datetime-local" name="published_at" value="{{ v.published_at }}"></label>
+      <p class="actions">
+        <button class="btn" type="submit" name="action" value="publish">{{ 'Update & publish' if (not new and a.status == 'published') else 'Publish' }}</button>
+        <button class="btn btn-ghost" type="submit" name="action" value="save">Save {{ 'changes' if not new else 'draft' }}</button>
+        {% if not new and a.status == 'published' %}<button class="btn btn-ghost" type="submit" name="action" value="unpublish">Unpublish</button>{% endif %}
+      </p>
+    </div>
+    <div class="panel">
+      <h2>Classification</h2>
+      {% if not collected %}
+      <label>Content type
+        <select name="kind">
+          <option value="news" {{ 'selected' if v.kind == 'news' }}>Reported news</option>
+          <option value="analysis" {{ 'selected' if v.kind == 'analysis' }}>Analysis</option>
+          <option value="opinion" {{ 'selected' if v.kind == 'opinion' }}>Opinion</option></select></label>
+      {% endif %}
+      <label>Category
+        <select name="category_id"><option value="">Select...</option>
+          {% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if v.category_id == c.id }}>{{ c.name }}</option>{% endfor %}</select></label>
+      {% if not collected %}
+      <label>Author
+        <select name="author_id"><option value="">Select...</option>
+          {% for au in authors %}<option value="{{ au.id }}" {{ 'selected' if v.author_id == au.id }}>{{ au.name }}</option>{% endfor %}</select></label>
+      {% endif %}
+      <label class="check"><input type="checkbox" name="is_featured" {{ 'checked' if v.is_featured }}> Feature on homepage</label>
+      <label class="check"><input type="checkbox" name="is_editors_pick" {{ 'checked' if v.is_editors_pick }}> Editor's pick</label>
+    </div>
+    <div class="panel">
+      <h2>Featured image</h2>
+      {% if v.featured_image %}<img class="img-preview" src="{{ v.featured_image|img('small') }}" alt="Current featured image">
+      <label class="check"><input type="checkbox" name="remove_image"> Remove image</label>{% endif %}
+      <label>Upload <small>(JPG, PNG, WebP, GIF; max 6 MB)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+      <label>Alt text / caption<input type="text" name="image_alt" value="{{ v.image_alt }}" maxlength="250"></label>
+      <label>Credit<input type="text" name="image_credit" value="{{ v.image_credit }}" maxlength="200"></label>
+    </div>
+  </aside>
+</form>
+{% endblock %}

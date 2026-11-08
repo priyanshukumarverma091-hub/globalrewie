@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{% block title %}{{ title or 'Dashboard' }}{% endblock %} | {{ site_name }} Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="admin">
+{% if current_user.is_authenticated %}
+<div class="shell">
+  <aside class="side">
+    <p class="brand">{{ site_name }}<span>Editorial</span></p>
+    <nav aria-label="Admin">
+      <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('admin.articles') }}">Articles</a>
+      <a href="{{ url_for('admin.new_article') }}">New article</a>
+      <a href="{{ url_for('admin.collected') }}">Collected news</a>
+      <a href="{{ url_for('admin.ticker') }}">Breaking ticker</a>
+      {% if current_user.is_admin %}
+      <a href="{{ url_for('admin.categories') }}">Categories</a>
+      <a href="{{ url_for('admin.authors') }}">Authors</a>
+      <a href="{{ url_for('admin.subscribers') }}">Subscribers</a>
+      <a href="{{ url_for('admin.logs') }}">Activity log</a>
+      {% endif %}
+      <a href="{{ url_for('public.index') }}" target="_blank" rel="noopener">View site</a>
+    </nav>
+    <form method="post" action="{{ url_for('admin.logout') }}" class="logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p>{{ current_user.name }} <small>({{ current_user.role }})</small></p>
+      <button class="btn-link" type="submit">Sign out</button>
+    </form>
+  </aside>
+  <main class="content">
+{% else %}
+  <main class="content solo">
+{% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}<p class="flash flash-{{ cat }}" role="status">{{ msg }}</p>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+{% if current_user.is_authenticated %}</div>{% endif %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+</body>
+</html>
